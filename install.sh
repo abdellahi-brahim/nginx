@@ -2,7 +2,7 @@
 
 # Variables
 NGINX_VERSION="1.19.0"
-INSTALL_DIR="$HOME/nginx"
+INSTALL_DIR="/home/abdellahi/Code/nginx"
 
 # Ensure the script is run as root or with sudo
 if [ "$(id -u)" -ne 0 ]; then
@@ -29,9 +29,36 @@ cd nginx-$NGINX_VERSION && \
 # Configure, compile and install nginx
 ./configure --prefix=$INSTALL_DIR && \
 make && \
-make install && \
+sudo make install && \
+
+# Remove downloaded folders
+cd .. && \
+rm -rf nginx-$NGINX_VERSION nginx-$NGINX_VERSION.tar.gz && \
+
+# Add sbin/nginx to system paths
+echo "export PATH=\$PATH:$INSTALL_DIR/sbin" >> ~/.bashrc && \
+source ~/.bashrc && \
 
 # Print nginx version
 $INSTALL_DIR/sbin/nginx -v
 
-# If any command fails, the script will exit with a non-zero status
+# Optional: Set up a systemd service for nginx
+cat <<EOL | sudo tee /etc/systemd/system/nginx.service
+[Unit]
+Description=The NGINX HTTP and reverse proxy server
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=$INSTALL_DIR/logs/nginx.pid
+ExecStartPre=$INSTALL_DIR/sbin/nginx -t
+ExecStart=$INSTALL_DIR/sbin/nginx
+ExecReload=$INSTALL_DIR/sbin/nginx -s reload
+ExecStop=$INSTALL_DIR/sbin/nginx -s stop
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+sudo systemctl daemon-reload
