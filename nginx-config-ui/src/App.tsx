@@ -4,31 +4,32 @@ import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import LoadBalancing from './components/ConfigSections/LoadBalancing';
-// ... Import other configuration components ...
+import SSLTLSTermination from './components/ConfigSections/SSLTLSTermination';
 
-interface ConfigOption {
-  id: number;
-  name: string;
-  component: JSX.Element;
-}
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+import { ConfigOption } from './interfaces/ConfigOption';
 
 const configOptions: ConfigOption[] = [
   { id: 1, name: 'Load Balancing', component: <LoadBalancing /> },
-  // Add other configurations here. Example:
-  // { id: 2, name: 'SSL/TLS Termination', component: <SSLTLS /> },
-  // ...
+  { id: 2, name: 'SSL/TLS Termination', component: <SSLTLSTermination /> },
 ];
 
 const App: React.FC = () => {
-  // State to track the currently selected configuration
   const [selectedConfig, setSelectedConfig] = useState<ConfigOption>(configOptions[0]);
 
   return (
     <div className="App">
       <Navbar />
-      <Sidebar options={configOptions} onOptionSelect={setSelectedConfig} />
-      <div className="content">
-        {selectedConfig.component}
+      <div className="container-fluid">
+        <div className="row">
+          <div className="col-md-3 col-lg-2 p-0 bg-light">
+            <Sidebar options={configOptions} onOptionSelect={setSelectedConfig} />
+          </div>
+          <div className="col-md-9 col-lg-10 p-4">
+            {selectedConfig.component}
+          </div>
+        </div>
       </div>
     </div>
   );
