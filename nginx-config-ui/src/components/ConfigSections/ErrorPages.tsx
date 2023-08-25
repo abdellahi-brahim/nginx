@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import '../../styles/ErrorPages.scss';
 import AceEditor from 'react-ace';
 import { Parser } from "htmlparser2";
-import { Handler } from "htmlparser2/lib/Parser";
-
 
 import "ace-builds/src-noconflict/mode-html";
 import "ace-builds/src-noconflict/mode-javascript";
@@ -32,40 +30,15 @@ const ErrorPages: React.FC = () => {
   });
   const [selectedErrorCode, setSelectedErrorCode] = useState<ErrorCode>('500');
   const [currentMode, setCurrentMode] = useState<'html' | 'css' | 'js'>('html');
-  const [isEditorExpanded, setEditorExpanded] = useState(false);
-
-  const isValidHTML = (html: string): boolean => {
-    let isValid = true;
-    const handler = {
-      onerror(error: Error) {
-          isValid = false;
-      },
-  };
-  
-
-    const parser = new Parser(handler);
-    parser.write(html);
-    parser.end();
-
-    return isValid;
-  };
+  const [shouldRenderPreview, setShouldRenderPreview] = useState(false);
 
   const renderPreview = () => {
+    if (!shouldRenderPreview) return null;
     const content = config[selectedErrorCode];
-
-    if (!isValidHTML(content.html)) {
-      return <div>Invalid or empty HTML content. Preview is not available.</div>;
-    }
-
     let html = content.html;
-    if (content.css.trim()) {
-      html = `<style>${content.css}</style>` + html;
-    }
-    if (content.js.trim()) {
-      html += `<script type="text/javascript">${content.js}</script>`;
-    }
-
-    return <iframe srcDoc={html} title="Preview" style={{ width: '100%', height: '400px', border: '1px solid #ccc' }} />;
+    if (content.css.trim()) html = `<style>${content.css}</style>` + html;
+    if (content.js.trim()) html += `<script type="text/javascript">${content.js}</script>`;
+    return <iframe srcDoc={html} title="Preview" className="preview-iframe" />;
   };
 
   const handleEditorChange = (newValue: string) => {
@@ -76,14 +49,26 @@ const ErrorPages: React.FC = () => {
   };
 
   return (
-    <div className="error-pages-config d-flex">
+    <div className="error-pages-config">
+      <div className="form-group">
+        <label>Select Error Code:</label>
+        <select
+          className="form-control"
+          value={selectedErrorCode}
+          onChange={(e) => setSelectedErrorCode(e.target.value as ErrorCode)}
+        >
+          {Object.keys(config).map(code => (
+            <option key={code} value={code}>{code}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="editor-section">
-        {/* Editor mode selector, editor, and other UI components go here... */}
         <div className="editor-controls mb-3">
           <div className="editor-mode-selector btn-group">
-            <button className="btn btn-outline-primary" onClick={() => setCurrentMode('html')}>HTML</button>
-            <button className="btn btn-outline-primary" onClick={() => setCurrentMode('css')}>CSS</button>
-            <button className="btn btn-outline-primary" onClick={() => setCurrentMode('js')}>JS</button>
+            <button className={`btn ${currentMode === 'html' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setCurrentMode('html')}>HTML</button>
+            <button className={`btn ${currentMode === 'css' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setCurrentMode('css')}>CSS</button>
+            <button className={`btn ${currentMode === 'js' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setCurrentMode('js')}>JS</button>
           </div>
         </div>
 
@@ -102,11 +87,13 @@ const ErrorPages: React.FC = () => {
             showLineNumbers: true,
             tabSize: 2,
           }}
-          style={{ width: '100%', height: isEditorExpanded ? '600px' : '300px' }}
+          className="editor"
         />
+
+        <button className="btn btn-info mt-3" onClick={() => setShouldRenderPreview(true)}>Render Preview</button>
       </div>
 
-      <div className="preview-section ml-4">
+      <div className="preview-section mt-4">
         {renderPreview()}
       </div>
     </div>
